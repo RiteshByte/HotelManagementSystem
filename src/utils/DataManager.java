@@ -217,18 +217,11 @@ public class DataManager {
                 .collect(Collectors.toList());
     }
 
-    // Update methods
     public void updateRoom(Room room) {
         for (int i = 0; i < rooms.size(); i++) {
             if (rooms.get(i).getRoomId() == room.getRoomId()) {
                 rooms.set(i, room);
                 break;
-            }
-        }
-        // Also update room reference in bookings
-        for (Booking booking : bookings) {
-            if (booking.getRoomId() == room.getRoomId()) {
-                booking.setRoom(room);
             }
         }
     }
@@ -282,6 +275,15 @@ public class DataManager {
     public void addGuest(Guest guest) {
         guest.setGuestId(guests.size() + 1);
         guests.add(guest);
+    }
+
+    public void updateGuest(Guest guest) {
+        for (int i = 0; i < guests.size(); i++) {
+            if (guests.get(i).getGuestId() == guest.getGuestId()) {
+                guests.set(i, guest);
+                break;
+            }
+        }
     }
 
     // Statistics
