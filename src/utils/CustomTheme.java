@@ -1,38 +1,48 @@
-// utils/CustomTheme.java - Fixed table header colors
+// utils/CustomTheme.java
 package utils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 
 public class CustomTheme {
 
     // ==================== COLOR PALETTE ====================
-    public static final Color PRIMARY_COLOR = new Color(25, 118, 210);
-    public static final Color SECONDARY_COLOR = new Color(66, 165, 245);
+    // LoginFrame colors
+    public static final Color DEEP_NAVY = new Color(10, 25, 47);
+    public static final Color SOFT_GOLD = new Color(212, 175, 55);
+    public static final Color LIGHT_GOLD = new Color(255, 215, 0);
+    public static final Color DARK_NAVY = new Color(5, 15, 30);
+    public static final Color CREAM_WHITE = new Color(255, 250, 240);
+    public static final Color INPUT_BG = new Color(248, 248, 248);
+    
+    // Dashboard colors
+    public static final Color PRIMARY_COLOR = DEEP_NAVY;
+    public static final Color SECONDARY_COLOR = SOFT_GOLD;
     public static final Color SUCCESS_COLOR = new Color(67, 160, 71);
     public static final Color DANGER_COLOR = new Color(211, 47, 47);
     public static final Color WARNING_COLOR = new Color(251, 140, 0);
     public static final Color INFO_COLOR = new Color(0, 172, 193);
-    public static final Color DARK_COLOR = new Color(33, 33, 33);
+    public static final Color DARK_COLOR = DEEP_NAVY;
     public static final Color LIGHT_COLOR = new Color(238, 238, 238);
-    public static final Color WHITE_COLOR = new Color(255, 255, 255);
+    public static final Color WHITE_COLOR = Color.WHITE;
     public static final Color GRAY_COLOR = new Color(117, 117, 117);
-    public static final Color BACKGROUND_COLOR = new Color(240, 245, 250);
-    public static final Color SIDEBAR_COLOR = new Color(26, 35, 48);
-    public static final Color PANEL_HEADER_COLOR = new Color(245, 248, 252);
-    public static final Color CARD_BACKGROUND_COLOR = new Color(255, 255, 255);
-    public static final Color TABLE_ROW_EVEN = new Color(255, 255, 255);
+    public static final Color BACKGROUND_COLOR = CREAM_WHITE;
+    public static final Color SIDEBAR_COLOR = DEEP_NAVY;
+    public static final Color PANEL_HEADER_COLOR = new Color(255, 250, 240);
+    public static final Color CARD_BACKGROUND_COLOR = Color.WHITE;
+    public static final Color TABLE_ROW_EVEN = Color.WHITE;
     public static final Color TABLE_ROW_ODD = new Color(248, 249, 250);
-    public static final Color TEXT_COLOR = new Color(33, 33, 33);
-    public static final Color HEADER_BACKGROUND = new Color(25, 118, 210);  // Blue background
-    public static final Color HEADER_TEXT_COLOR = Color.WHITE;  // White text on blue
+    public static final Color TEXT_COLOR = DEEP_NAVY;
+    public static final Color HEADER_BACKGROUND = DEEP_NAVY;
+    public static final Color HEADER_TEXT_COLOR = Color.WHITE;
 
     // ==================== FONTS ====================
-    public static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 26);
-    public static final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 18);
+    public static final Font TITLE_FONT = new Font("Georgia", Font.BOLD, 26);
+    public static final Font HEADER_FONT = new Font("Georgia", Font.BOLD, 18);
     public static final Font NORMAL_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     public static final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     public static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 14);
@@ -57,19 +67,19 @@ public class CustomTheme {
     // ==================== SHADOW PANEL ====================
     public static class ShadowPanel extends JPanel {
         private int shadowSize = 5;
-        private float shadowOpacity = 0.15f;
-        private int cornerRadius = 12;
+        private float shadowOpacity = 0.1f;
+        private int cornerRadius = 15;
 
         public ShadowPanel() {
             setOpaque(false);
-            setBackground(CARD_BACKGROUND_COLOR);
+            setBackground(Color.WHITE);
         }
 
         public ShadowPanel(int radius, int shadow) {
             this.cornerRadius = radius;
             this.shadowSize = shadow;
             setOpaque(false);
-            setBackground(CARD_BACKGROUND_COLOR);
+            setBackground(Color.WHITE);
         }
 
         @Override
@@ -85,9 +95,48 @@ public class CustomTheme {
         }
     }
 
+    // ==================== ROUNDED PANEL ====================
+    public static class RoundedPanel extends JPanel {
+        private int cornerRadius;
+        private Color backgroundColor;
+        private Color borderColor;
+        private int borderWidth;
+
+        public RoundedPanel(int radius) {
+            this.cornerRadius = radius;
+            this.backgroundColor = Color.WHITE;
+            this.borderColor = null;
+            this.borderWidth = 0;
+            setOpaque(false);
+        }
+
+        public RoundedPanel(int radius, Color bgColor) {
+            this(radius);
+            this.backgroundColor = bgColor;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            if (backgroundColor != null) {
+                g2d.setColor(backgroundColor);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+            }
+            if (borderColor != null && borderWidth > 0) {
+                g2d.setColor(borderColor);
+                g2d.setStroke(new BasicStroke(borderWidth));
+                g2d.drawRoundRect(borderWidth/2, borderWidth/2,
+                        getWidth() - borderWidth, getHeight() - borderWidth,
+                        cornerRadius, cornerRadius);
+            }
+            g2d.dispose();
+        }
+    }
+
     // ==================== MODERN BUTTON ====================
     public static class ModernButton extends JButton {
-        private int cornerRadius = 8;
+        private int cornerRadius = 25;
         private Color hoverColor;
         private Color originalColor;
         private Color pressedColor;
@@ -100,11 +149,11 @@ public class CustomTheme {
             setFont(BUTTON_FONT);
             setForeground(Color.WHITE);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setMargin(new Insets(10, 20, 10, 20));
+            setMargin(new Insets(12, 25, 12, 25));
 
             originalColor = PRIMARY_COLOR;
-            hoverColor = SECONDARY_COLOR;
-            pressedColor = new Color(21, 101, 192);
+            hoverColor = new Color(30, 50, 80);
+            pressedColor = new Color(5, 15, 35);
             setBackground(originalColor);
 
             addMouseListener(new java.awt.event.MouseAdapter() {
@@ -141,49 +190,14 @@ public class CustomTheme {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2d.setColor(getBackground());
             g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
-            FontMetrics fm = g2d.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(getText())) / 2;
-            int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
-            g2d.setColor(getForeground());
-            g2d.drawString(getText(), x, y);
-            g2d.dispose();
-        }
-    }
-
-    // ==================== OUTLINED BUTTON ====================
-    public static class OutlinedButton extends JButton {
-        private int cornerRadius = 8;
-        private Color borderColor;
-
-        public OutlinedButton(String text, Color color) {
-            super(text);
-            setBorderPainted(false);
-            setFocusPainted(false);
-            setContentAreaFilled(false);
-            setFont(BUTTON_FONT);
-            setForeground(color);
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setMargin(new Insets(8, 16, 8, 16));
-            this.borderColor = color;
-
-            addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override
-                public void mouseEntered(java.awt.event.MouseEvent evt) {
-                    setForeground(color.brighter());
-                }
-                @Override
-                public void mouseExited(java.awt.event.MouseEvent evt) {
-                    setForeground(color);
-                }
-            });
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(borderColor);
-            g2d.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cornerRadius, cornerRadius);
+            
+            // Add subtle shadow
+            g2d.setColor(new Color(0, 0, 0, 30));
+            g2d.fillRoundRect(0, 3, getWidth(), getHeight(), cornerRadius, cornerRadius);
+            
+            g2d.setColor(getBackground());
+            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+            
             FontMetrics fm = g2d.getFontMetrics();
             int x = (getWidth() - fm.stringWidth(getText())) / 2;
             int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
@@ -195,33 +209,33 @@ public class CustomTheme {
 
     // ==================== MODERN TEXT FIELD ====================
     public static class ModernTextField extends JTextField {
-        private int cornerRadius = 8;
-        private Color borderColor = GRAY_COLOR;
-        private Color focusColor = PRIMARY_COLOR;
+        private int cornerRadius = 10;
+        private Color borderColor = new Color(200, 200, 200);
+        private Color focusColor = SOFT_GOLD;
         private String placeholder = "";
 
         public ModernTextField() {
             setOpaque(false);
             setFont(NORMAL_FONT);
             setForeground(TEXT_COLOR);
-            setBackground(Color.WHITE);
-            setCaretColor(PRIMARY_COLOR);
+            setBackground(INPUT_BG);
+            setCaretColor(SOFT_GOLD);
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedBorder(cornerRadius, borderColor, 1),
-                    BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+                    BorderFactory.createEmptyBorder(12, 15, 12, 15)));
 
             addFocusListener(new java.awt.event.FocusAdapter() {
                 @Override
                 public void focusGained(java.awt.event.FocusEvent evt) {
                     setBorder(BorderFactory.createCompoundBorder(
                             new RoundedBorder(cornerRadius, focusColor, 2),
-                            BorderFactory.createEmptyBorder(9, 11, 9, 11)));
+                            BorderFactory.createEmptyBorder(11, 14, 11, 14)));
                 }
                 @Override
                 public void focusLost(java.awt.event.FocusEvent evt) {
                     setBorder(BorderFactory.createCompoundBorder(
                             new RoundedBorder(cornerRadius, borderColor, 1),
-                            BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+                            BorderFactory.createEmptyBorder(12, 15, 12, 15)));
                 }
             });
         }
@@ -258,33 +272,33 @@ public class CustomTheme {
 
     // ==================== MODERN PASSWORD FIELD ====================
     public static class ModernPasswordField extends JPasswordField {
-        private int cornerRadius = 8;
-        private Color borderColor = GRAY_COLOR;
-        private Color focusColor = PRIMARY_COLOR;
+        private int cornerRadius = 10;
+        private Color borderColor = new Color(200, 200, 200);
+        private Color focusColor = SOFT_GOLD;
 
         public ModernPasswordField() {
             setOpaque(false);
             setFont(NORMAL_FONT);
             setForeground(TEXT_COLOR);
-            setBackground(Color.WHITE);
-            setCaretColor(PRIMARY_COLOR);
+            setBackground(INPUT_BG);
+            setCaretColor(SOFT_GOLD);
             setEchoChar('•');
             setBorder(BorderFactory.createCompoundBorder(
                     new RoundedBorder(cornerRadius, borderColor, 1),
-                    BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+                    BorderFactory.createEmptyBorder(12, 15, 12, 15)));
 
             addFocusListener(new java.awt.event.FocusAdapter() {
                 @Override
                 public void focusGained(java.awt.event.FocusEvent evt) {
                     setBorder(BorderFactory.createCompoundBorder(
                             new RoundedBorder(cornerRadius, focusColor, 2),
-                            BorderFactory.createEmptyBorder(9, 11, 9, 11)));
+                            BorderFactory.createEmptyBorder(11, 14, 11, 14)));
                 }
                 @Override
                 public void focusLost(java.awt.event.FocusEvent evt) {
                     setBorder(BorderFactory.createCompoundBorder(
                             new RoundedBorder(cornerRadius, borderColor, 1),
-                            BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+                            BorderFactory.createEmptyBorder(12, 15, 12, 15)));
                 }
             });
         }
@@ -301,6 +315,49 @@ public class CustomTheme {
             g2d.setColor(getBackground());
             g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
             super.paintComponent(g);
+            g2d.dispose();
+        }
+    }
+
+    // ==================== OUTLINED BUTTON ====================
+    public static class OutlinedButton extends JButton {
+        private int cornerRadius = 25;
+        private Color borderColor;
+
+        public OutlinedButton(String text, Color color) {
+            super(text);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setFont(BUTTON_FONT);
+            setForeground(color);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setMargin(new Insets(10, 25, 10, 25));
+            this.borderColor = color;
+
+            addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent evt) {
+                    setForeground(color.brighter());
+                }
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent evt) {
+                    setForeground(color);
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setColor(borderColor);
+            g2d.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cornerRadius, cornerRadius);
+            FontMetrics fm = g2d.getFontMetrics();
+            int x = (getWidth() - fm.stringWidth(getText())) / 2;
+            int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+            g2d.setColor(getForeground());
+            g2d.drawString(getText(), x, y);
             g2d.dispose();
         }
     }
@@ -336,28 +393,6 @@ public class CustomTheme {
         @Override
         public boolean isBorderOpaque() {
             return false;
-        }
-    }
-
-    // ==================== ROUNDED PANEL ====================
-    public static class RoundedPanel extends JPanel {
-        private int cornerRadius;
-        private Color backgroundColor;
-
-        public RoundedPanel(int radius, Color bgColor) {
-            this.cornerRadius = radius;
-            this.backgroundColor = bgColor;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setColor(backgroundColor);
-            g2d.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
-            g2d.dispose();
-            super.paintComponent(g);
         }
     }
 
@@ -424,41 +459,38 @@ public class CustomTheme {
     // ==================== STYLED TABLE ====================
     public static void styleTable(JTable table) {
         table.setFont(NORMAL_FONT);
-        table.setRowHeight(45);
+        table.setRowHeight(50);
         table.setShowGrid(false);
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(new Color(25, 118, 210, 50));
+        table.setSelectionBackground(new Color(212, 175, 55, 50));
         table.setSelectionForeground(TEXT_COLOR);
         table.setBackground(Color.WHITE);
         table.setForeground(TEXT_COLOR);
 
-        // Fix table header - make it visible with blue background and white text
         JTableHeader header = table.getTableHeader();
         header.setFont(HEADER_FONT);
         header.setBackground(HEADER_BACKGROUND);
         header.setForeground(HEADER_TEXT_COLOR);
-        header.setPreferredSize(new Dimension(0, 45));
+        header.setPreferredSize(new Dimension(0, 50));
         header.setReorderingAllowed(false);
-        
-        // Make header opaque and set colors properly
         header.setOpaque(true);
         
-        // Custom header renderer to ensure colors are applied
-        header.setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                JLabel label = new JLabel(value != null ? value.toString() : "");
+                label.setFont(HEADER_FONT);
                 label.setBackground(HEADER_BACKGROUND);
                 label.setForeground(HEADER_TEXT_COLOR);
-                label.setFont(HEADER_FONT);
+                label.setOpaque(true);
                 label.setHorizontalAlignment(SwingConstants.CENTER);
-                label.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+                label.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
                 return label;
             }
         });
 
-        table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
@@ -474,7 +506,7 @@ public class CustomTheme {
                 }
                 
                 if (isSelected) {
-                    label.setBackground(new Color(25, 118, 210, 50));
+                    label.setBackground(new Color(212, 175, 55, 50));
                     label.setForeground(TEXT_COLOR);
                 } else {
                     label.setBackground(row % 2 == 0 ? TABLE_ROW_EVEN : TABLE_ROW_ODD);
@@ -512,8 +544,8 @@ public class CustomTheme {
         comboBox.setBackground(Color.WHITE);
         comboBox.setForeground(TEXT_COLOR);
         comboBox.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(GRAY_COLOR),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+            BorderFactory.createEmptyBorder(8, 12, 8, 12)
         ));
     }
     
