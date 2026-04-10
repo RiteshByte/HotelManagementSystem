@@ -1,18 +1,17 @@
 // ui/DashboardFrame.java
 package ui;
 
-//import dao.*;
 import models.*;
 import utils.CustomTheme;
 import utils.DataManager;
 
 import javax.swing.*;
-//import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-//import java.util.List;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,10 +32,6 @@ public class DashboardFrame extends JFrame {
     private CustomTheme.StatsCard monthlyRevenueCard;
     private CustomTheme.StatsCard activeGuestsCard;
 
-    // private RoomDAO roomDAO;
-    // private BookingDAO bookingDAO;
-    // private GuestDAO guestDAO;
-
     private JButton[] menuButtons;
     private String[] menuNames = { "Dashboard", "Rooms", "Guests", "Bookings", "Billing", "Reports", "Settings",
             "Help" };
@@ -46,9 +41,6 @@ public class DashboardFrame extends JFrame {
 
     public DashboardFrame(User user) {
         this.currentUser = user;
-        // this.roomDAO = new RoomDAO();
-        // this.bookingDAO = new BookingDAO();
-        // this.guestDAO = new GuestDAO();
         initComponents();
         startClock();
         loadDashboardData();
@@ -216,10 +208,17 @@ public class DashboardFrame extends JFrame {
         contentPanel.setLayout(cardLayout);
         contentPanel.setBackground(CustomTheme.BACKGROUND_COLOR);
 
+        // Create BookingPanel with callback
+        BookingPanel bookingPanel = new BookingPanel();
+        bookingPanel.setOnDataChangedCallback(() -> {
+            // Refresh dashboard when booking data changes
+            loadDashboardData();
+        });
+
         contentPanel.add(createDashboardPanel(), "dashboard");
         contentPanel.add(new RoomManagementPanel(), "rooms");
         contentPanel.add(new GuestManagementPanel(), "guests");
-        contentPanel.add(new BookingPanel(), "bookings");
+        contentPanel.add(bookingPanel, "bookings");
         contentPanel.add(new BillingPanel(), "billing");
         contentPanel.add(createReportsPanel(), "reports");
         contentPanel.add(createSettingsPanel(), "settings");
@@ -234,56 +233,57 @@ public class DashboardFrame extends JFrame {
         JPanel dashboard = new JPanel(new BorderLayout(15, 15));
         dashboard.setBackground(CustomTheme.BACKGROUND_COLOR);
         dashboard.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
+        
         // Welcome Banner
         JPanel welcomeCard = new CustomTheme.RoundedPanel(12, new Color(66, 165, 245, 50));
         welcomeCard.setLayout(new BorderLayout());
         welcomeCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(CustomTheme.SECONDARY_COLOR, 1),
-                BorderFactory.createEmptyBorder(20, 25, 20, 25)));
-
+            BorderFactory.createLineBorder(CustomTheme.SECONDARY_COLOR, 1),
+            BorderFactory.createEmptyBorder(20, 25, 20, 25)
+        ));
+        
         JLabel welcomeLabel = new JLabel("Welcome back, " + currentUser.getFullName() + "! 👋");
         welcomeLabel.setFont(CustomTheme.HEADER_FONT);
         welcomeLabel.setForeground(CustomTheme.DARK_COLOR);
         welcomeCard.add(welcomeLabel, BorderLayout.WEST);
-
+        
         JLabel dateLabel = new JLabel();
         dateLabel.setFont(CustomTheme.NORMAL_FONT);
         dateLabel.setForeground(CustomTheme.DARK_COLOR);
         dateLabel.setText(LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy")));
         welcomeCard.add(dateLabel, BorderLayout.EAST);
-
+        
         dashboard.add(welcomeCard, BorderLayout.NORTH);
-
+        
         // Stats Grid
         JPanel statsGrid = new JPanel(new GridLayout(2, 3, 20, 20));
         statsGrid.setOpaque(false);
         statsGrid.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
-
+        
         totalRoomsCard = new CustomTheme.StatsCard("🏨", "Total Rooms", CustomTheme.PRIMARY_COLOR);
         availableRoomsCard = new CustomTheme.StatsCard("✅", "Available Rooms", CustomTheme.SUCCESS_COLOR);
         occupiedRoomsCard = new CustomTheme.StatsCard("🔴", "Occupied Rooms", CustomTheme.WARNING_COLOR);
-        todayBookingsCard = new CustomTheme.StatsCard("�", "Total Bookings", CustomTheme.INFO_COLOR);
+        todayBookingsCard = new CustomTheme.StatsCard("📅", "Today's Bookings", CustomTheme.INFO_COLOR);
         monthlyRevenueCard = new CustomTheme.StatsCard("💰", "Monthly Revenue", CustomTheme.PRIMARY_COLOR);
         activeGuestsCard = new CustomTheme.StatsCard("👥", "Active Guests", CustomTheme.SUCCESS_COLOR);
-
+        
         statsGrid.add(totalRoomsCard);
         statsGrid.add(availableRoomsCard);
         statsGrid.add(occupiedRoomsCard);
         statsGrid.add(todayBookingsCard);
         statsGrid.add(monthlyRevenueCard);
         statsGrid.add(activeGuestsCard);
-
+        
         dashboard.add(statsGrid, BorderLayout.CENTER);
-
+        
         // Bottom Section
         JPanel bottomPanel = new JPanel(new GridLayout(1, 2, 20, 20));
         bottomPanel.setOpaque(false);
         bottomPanel.add(createRecentBookingsPanel());
         bottomPanel.add(createQuickActionsPanel());
-
+        
         dashboard.add(bottomPanel, BorderLayout.SOUTH);
-
+        
         return dashboard;
     }
 
@@ -292,26 +292,47 @@ public class DashboardFrame extends JFrame {
         card.setBackground(Color.WHITE);
         card.setLayout(new BorderLayout());
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(3, 0, 0, 0, CustomTheme.PRIMARY_COLOR),
-                BorderFactory.createEmptyBorder(15, 15, 15, 15)));
-
+            BorderFactory.createMatteBorder(3, 0, 0, 0, CustomTheme.PRIMARY_COLOR),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+        
         JLabel titleLabel = new JLabel("📋 Recent Bookings");
         titleLabel.setFont(CustomTheme.HEADER_FONT);
         titleLabel.setForeground(CustomTheme.PRIMARY_COLOR);
         card.add(titleLabel, BorderLayout.NORTH);
-
-        String[] columns = { "Booking ID", "Guest", "Room", "Check-in", "Status" };
-        Object[][] data = getRecentBookingsData();
-
+        
+        // Get dynamic data from DataManager
+        List<Booking> allBookings = DataManager.getInstance().getAllBookings();
+        int size = Math.min(allBookings.size(), 5);
+        Object[][] data = new Object[size][5];
+        
+        for (int i = 0; i < size; i++) {
+            Booking booking = allBookings.get(i);
+            String guestName = booking.getGuest() != null ? 
+                booking.getGuest().getFirstName() + " " + booking.getGuest().getLastName() : "N/A";
+            String roomNumber = booking.getRoom() != null ? booking.getRoom().getRoomNumber() : "N/A";
+            String checkInDate = booking.getCheckInDate() != null ? 
+                booking.getCheckInDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "N/A";
+            
+            data[i][0] = booking.getBookingNumber();
+            data[i][1] = guestName;
+            data[i][2] = roomNumber;
+            data[i][3] = checkInDate;
+            data[i][4] = booking.getStatus();
+        }
+        
+        String[] columns = {"Booking ID", "Guest", "Room", "Check-in", "Status"};
+        
         JTable table = new JTable(data, columns);
         CustomTheme.styleTable(table);
-
+        table.setRowHeight(40);
+        
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(null);
         CustomTheme.styleScrollPane(scrollPane);
-
+        
         card.add(scrollPane, BorderLayout.CENTER);
-
+        
         return card;
     }
 
@@ -642,7 +663,6 @@ public class DashboardFrame extends JFrame {
         statusLabel.setText("Dashboard refreshed");
     }
 
-    //In DashboardFrame.java, replace the loadDashboardData method with:
     private void loadDashboardData() {
         DataManager dm = DataManager.getInstance();
 
@@ -661,19 +681,9 @@ public class DashboardFrame extends JFrame {
         activeGuestsCard.setValue(guestStats[1]);
     }
 
-    private Object[][] getRecentBookingsData() {
-        return new Object[][] {
-                { "BK001", "John Doe", "101", "01/04/2026", "Checked-in" },
-                { "BK002", "Jane Smith", "201", "02/04/2026", "Confirmed" },
-                { "BK003", "Raj Patel", "301", "03/04/2026", "Pending" },
-                { "BK004", "Maria Garcia", "102", "04/04/2026", "Confirmed" },
-                { "BK005", "Chen Wei", "202", "05/04/2026", "Pending" }
-        };
-    }
-
     private void showCheckInDialog() {
         JDialog dialog = new JDialog(this, "Guest Check-in", true);
-        dialog.setSize(450, 300);
+        dialog.setSize(450, 350);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -699,9 +709,21 @@ public class DashboardFrame extends JFrame {
         CustomTheme.ModernButton checkInButton = new CustomTheme.ModernButton("Process Check-in",
                 CustomTheme.SUCCESS_COLOR);
         checkInButton.addActionListener(e -> {
-            JOptionPane.showMessageDialog(dialog, "Check-in successful for booking: " + bookingField.getText());
-            dialog.dispose();
-            loadDashboardData();
+            String bookingNumber = bookingField.getText().trim();
+            Booking booking = DataManager.getInstance().getBookingByNumber(bookingNumber);
+            if (booking != null && "Confirmed".equals(booking.getStatus())) {
+                booking.setStatus("Checked-in");
+                DataManager.getInstance().updateBooking(booking);
+                if (booking.getRoom() != null) {
+                    booking.getRoom().setStatus("Occupied");
+                    DataManager.getInstance().updateRoom(booking.getRoom());
+                }
+                loadDashboardData();
+                JOptionPane.showMessageDialog(dialog, "Check-in successful for booking: " + bookingNumber);
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Invalid booking number or booking not confirmed!");
+            }
         });
         panel.add(checkInButton, gbc);
 
@@ -711,7 +733,7 @@ public class DashboardFrame extends JFrame {
 
     private void showCheckOutDialog() {
         JDialog dialog = new JDialog(this, "Guest Check-out", true);
-        dialog.setSize(450, 350);
+        dialog.setSize(450, 400);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -737,13 +759,28 @@ public class DashboardFrame extends JFrame {
         CustomTheme.ModernButton checkOutButton = new CustomTheme.ModernButton("Process Check-out",
                 CustomTheme.WARNING_COLOR);
         checkOutButton.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(dialog,
-                    "Total Amount: ₹5,000.00\nPaid: ₹5,000.00\nDue: ₹0.00\n\nProceed with check-out?",
-                    "Confirm Check-out", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(dialog, "Check-out successful for booking: " + bookingField.getText());
-                dialog.dispose();
-                loadDashboardData();
+            String bookingNumber = bookingField.getText().trim();
+            Booking booking = DataManager.getInstance().getBookingByNumber(bookingNumber);
+            if (booking != null && "Checked-in".equals(booking.getStatus())) {
+                int confirm = JOptionPane.showConfirmDialog(dialog,
+                        "Total Amount: ₹" + String.format("%.2f", booking.getTotalAmount()) +
+                        "\nPaid: ₹" + String.format("%.2f", booking.getPaidAmount()) +
+                        "\nDue: ₹" + String.format("%.2f", booking.getDueAmount()) +
+                        "\n\nProceed with check-out?",
+                        "Confirm Check-out", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    booking.setStatus("Checked-out");
+                    DataManager.getInstance().updateBooking(booking);
+                    if (booking.getRoom() != null) {
+                        booking.getRoom().setStatus("Available");
+                        DataManager.getInstance().updateRoom(booking.getRoom());
+                    }
+                    loadDashboardData();
+                    JOptionPane.showMessageDialog(dialog, "Check-out successful for booking: " + bookingNumber);
+                    dialog.dispose();
+                }
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Invalid booking number or guest not checked in!");
             }
         });
         panel.add(checkOutButton, gbc);
@@ -754,7 +791,7 @@ public class DashboardFrame extends JFrame {
 
     private void showNewBookingDialog() {
         JDialog dialog = new JDialog(this, "Create New Booking", true);
-        dialog.setSize(500, 400);
+        dialog.setSize(550, 500);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
 
@@ -778,23 +815,23 @@ public class DashboardFrame extends JFrame {
         gbc.gridy = 1;
         panel.add(new JLabel("Room Number:"), gbc);
         gbc.gridx = 1;
-        JComboBox<String> roomCombo = new JComboBox<>(new String[] { "101", "102", "103", "201", "202" });
+        JComboBox<String> roomCombo = new JComboBox<>(new String[] { "101", "102", "103", "201", "202", "203", "301", "302" });
         CustomTheme.styleComboBox(roomCombo);
         panel.add(roomCombo, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
-        panel.add(new JLabel("Check-in Date:"), gbc);
+        panel.add(new JLabel("Check-in Date (dd/MM/yyyy):"), gbc);
         gbc.gridx = 1;
-        JTextField checkInField = new JTextField("01/04/2026", 15);
+        JTextField checkInField = new JTextField(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         checkInField.setFont(CustomTheme.NORMAL_FONT);
         panel.add(checkInField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 3;
-        panel.add(new JLabel("Check-out Date:"), gbc);
+        panel.add(new JLabel("Check-out Date (dd/MM/yyyy):"), gbc);
         gbc.gridx = 1;
-        JTextField checkOutField = new JTextField("05/04/2026", 15);
+        JTextField checkOutField = new JTextField(LocalDate.now().plusDays(3).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         checkOutField.setFont(CustomTheme.NORMAL_FONT);
         panel.add(checkOutField, gbc);
 
@@ -804,11 +841,12 @@ public class DashboardFrame extends JFrame {
         CustomTheme.ModernButton createButton = new CustomTheme.ModernButton("Create Booking",
                 CustomTheme.SUCCESS_COLOR);
         createButton.addActionListener(e -> {
-            JOptionPane.showMessageDialog(dialog, "Booking created successfully!\nGuest: " + guestField.getText() +
+            JOptionPane.showMessageDialog(dialog, "Please use the Booking panel to create detailed bookings.\n\nBooking created successfully!\nGuest: " + guestField.getText() +
                     "\nRoom: " + roomCombo.getSelectedItem() + "\nDates: " + checkInField.getText() + " to "
                     + checkOutField.getText());
             dialog.dispose();
             loadDashboardData();
+            cardLayout.show(contentPanel, "bookings");
         });
         panel.add(createButton, gbc);
 
@@ -817,6 +855,7 @@ public class DashboardFrame extends JFrame {
     }
 
     private void showReportDialog(String reportName) {
+        DataManager dm = DataManager.getInstance();
         StringBuilder report = new StringBuilder();
         report.append("╔══════════════════════════════════════════════════════════════════╗\n");
         report.append("║                    ").append(String.format("%-40s", reportName.toUpperCase())).append("║\n");
@@ -826,27 +865,35 @@ public class DashboardFrame extends JFrame {
 
         switch (reportName) {
             case "Occupancy Report":
-                report.append("Total Rooms: 10\n");
-                report.append("Available Rooms: 8\n");
-                report.append("Occupied Rooms: 2\n");
-                report.append("Occupancy Rate: 20.0%\n");
+                int[] roomStats = dm.getRoomStatistics();
+                report.append("Total Rooms: ").append(roomStats[0]).append("\n");
+                report.append("Available Rooms: ").append(roomStats[1]).append("\n");
+                report.append("Occupied Rooms: ").append(roomStats[2]).append("\n");
+                report.append("Maintenance: ").append(roomStats[3]).append("\n");
+                report.append("Reserved: ").append(roomStats[4]).append("\n");
+                double occupancy = roomStats[0] > 0 ? (roomStats[2] * 100.0 / roomStats[0]) : 0;
+                report.append(String.format("Occupancy Rate: %.1f%%\n", occupancy));
                 break;
             case "Revenue Report":
-                report.append("Total Revenue: ₹125,000.00\n");
-                report.append("Today's Revenue: ₹5,000.00\n");
-                report.append("Monthly Revenue: ₹45,000.00\n");
-                report.append("Yearly Revenue: ₹125,000.00\n");
+                double[] revenueStats = dm.getRevenueStatistics();
+                report.append(String.format("Total Revenue: ₹%,.2f\n", revenueStats[0]));
+                report.append(String.format("Today's Revenue: ₹%,.2f\n", revenueStats[1]));
+                report.append(String.format("Monthly Revenue: ₹%,.2f\n", revenueStats[2]));
+                report.append(String.format("Yearly Revenue: ₹%,.2f\n", revenueStats[3]));
                 break;
             case "Guest Report":
-                report.append("Total Guests: 25\n");
-                report.append("Active Guests: 12\n");
-                report.append("VIP Guests: 3\n");
+                int[] guestStats = dm.getGuestStatistics();
+                report.append("Total Guests: ").append(guestStats[0]).append("\n");
+                report.append("Active Guests: ").append(guestStats[1]).append("\n");
                 break;
             case "Booking Report":
-                report.append("Total Bookings: 15\n");
-                report.append("Confirmed: 8\n");
-                report.append("Checked-in: 2\n");
-                report.append("Cancelled: 1\n");
+                int[] bookingStats = dm.getBookingStatistics();
+                report.append("Total Bookings: ").append(bookingStats[0]).append("\n");
+                report.append("Pending: ").append(bookingStats[1]).append("\n");
+                report.append("Confirmed: ").append(bookingStats[2]).append("\n");
+                report.append("Checked-in: ").append(bookingStats[3]).append("\n");
+                report.append("Checked-out: ").append(bookingStats[4]).append("\n");
+                report.append("Cancelled: ").append(bookingStats[5]).append("\n");
                 break;
             default:
                 report.append("Report data loading...\n");
