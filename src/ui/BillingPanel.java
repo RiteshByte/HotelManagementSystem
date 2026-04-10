@@ -1,4 +1,4 @@
-// ui/BillingPanel.java
+// ui/BillingPanel.java - Fixed Header Panel
 package ui;
 
 import models.Booking;
@@ -51,65 +51,99 @@ public class BillingPanel extends JPanel {
     }
     
     private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel(new BorderLayout(15, 15));
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
         headerPanel.setBackground(CustomTheme.PANEL_HEADER_COLOR);
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 2, 0, CustomTheme.PRIMARY_COLOR),
-            BorderFactory.createEmptyBorder(20, 20, 10, 20)
+            BorderFactory.createEmptyBorder(20, 20, 15, 20)
         ));
         
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        // Title Section
+        JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setOpaque(false);
+        titlePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        
+        JPanel titleLeftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        titleLeftPanel.setOpaque(false);
         
         JLabel titleIcon = new JLabel("💰");
         titleIcon.setFont(CustomTheme.getEmojiFont().deriveFont(32f));
-        titlePanel.add(titleIcon);
+        titleLeftPanel.add(titleIcon);
         
         JLabel titleLabel = CustomTheme.createHeaderLabel("Billing & Invoicing");
-        titlePanel.add(titleLabel);
+        titleLeftPanel.add(titleLabel);
         
+        titlePanel.add(titleLeftPanel, BorderLayout.WEST);
+        
+        JPanel titleRightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        titleRightPanel.setOpaque(false);
+        
+        CustomTheme.ModernButton reportButton = new CustomTheme.ModernButton("📊 Generate Report", CustomTheme.PRIMARY_COLOR);
+        titleRightPanel.add(reportButton);
+        
+        CustomTheme.ModernButton refreshButton = new CustomTheme.ModernButton("🔄 Refresh", CustomTheme.SUCCESS_COLOR);
+        refreshButton.addActionListener(e -> loadInvoices());
+        titleRightPanel.add(refreshButton);
+        
+        titlePanel.add(titleRightPanel, BorderLayout.EAST);
+        
+        headerPanel.add(titlePanel);
+        headerPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        
+        // Subtitle
         JLabel subtitleLabel = CustomTheme.createLabel("Manage invoices, process payments and track revenue");
         subtitleLabel.setFont(CustomTheme.SMALL_FONT);
         subtitleLabel.setForeground(CustomTheme.GRAY_COLOR);
-        titlePanel.add(subtitleLabel);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.add(subtitleLabel);
         
-        headerPanel.add(titlePanel, BorderLayout.WEST);
+        headerPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setOpaque(false);
+        // Filter Bar
+        JPanel filterPanel = new JPanel(new BorderLayout(15, 0));
+        filterPanel.setOpaque(false);
+        filterPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        
+        JPanel leftFilters = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftFilters.setOpaque(false);
         
         periodFilterCombo = new JComboBox<>(new String[]{"All Time", "Today", "This Week", "This Month"});
         CustomTheme.styleComboBox(periodFilterCombo);
-        periodFilterCombo.setPreferredSize(new Dimension(120, 35));
+        periodFilterCombo.setPreferredSize(new Dimension(120, 38));
         periodFilterCombo.addActionListener(e -> filterByPeriod());
-        actionPanel.add(periodFilterCombo);
+        leftFilters.add(periodFilterCombo);
         
         searchField = new CustomTheme.ModernTextField(15);
         searchField.setPlaceholder("Search invoices...");
-        searchField.setPreferredSize(new Dimension(180, 35));
+        searchField.setPreferredSize(new Dimension(200, 38));
         searchField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
                 searchInvoices();
             }
         });
-        actionPanel.add(searchField);
+        leftFilters.add(searchField);
         
         statusFilterCombo = new JComboBox<>(new String[]{"All", "Paid", "Partial", "Pending"});
         CustomTheme.styleComboBox(statusFilterCombo);
-        statusFilterCombo.setPreferredSize(new Dimension(100, 35));
+        statusFilterCombo.setPreferredSize(new Dimension(100, 38));
         statusFilterCombo.addActionListener(e -> filterByStatus());
-        actionPanel.add(statusFilterCombo);
+        leftFilters.add(statusFilterCombo);
         
-        CustomTheme.ModernButton reportButton = new CustomTheme.ModernButton("📊 Generate Report", CustomTheme.PRIMARY_COLOR);
-        reportButton.addActionListener(e -> generateReport());
-        actionPanel.add(reportButton);
+        filterPanel.add(leftFilters, BorderLayout.WEST);
         
-        CustomTheme.ModernButton refreshButton = new CustomTheme.ModernButton("🔄 Refresh", CustomTheme.SUCCESS_COLOR);
-        refreshButton.addActionListener(e -> loadInvoices());
-        actionPanel.add(refreshButton);
+        // Add Generate Report button to filter panel's right side
+        JPanel rightFilters = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightFilters.setOpaque(false);
         
-        headerPanel.add(actionPanel, BorderLayout.EAST);
+        CustomTheme.ModernButton genReportButton = new CustomTheme.ModernButton("📊 Generate Report", CustomTheme.PRIMARY_COLOR);
+        genReportButton.addActionListener(e -> generateReport());
+        rightFilters.add(genReportButton);
+        
+        filterPanel.add(rightFilters, BorderLayout.EAST);
+        
+        headerPanel.add(filterPanel);
         
         return headerPanel;
     }
@@ -128,89 +162,7 @@ public class BillingPanel extends JPanel {
         };
         
         invoiceTable = new JTable(tableModel);
-        invoiceTable.setFont(CustomTheme.NORMAL_FONT);
-        invoiceTable.setRowHeight(45);
-        invoiceTable.setShowGrid(false);
-        invoiceTable.setForeground(CustomTheme.TEXT_COLOR);
-        invoiceTable.setBackground(Color.WHITE);
-        invoiceTable.setSelectionBackground(new Color(25, 118, 210, 50));
-        
-        // Fix Table Header
-        JTableHeader header = invoiceTable.getTableHeader();
-        header.setFont(CustomTheme.HEADER_FONT);
-        header.setBackground(CustomTheme.HEADER_BACKGROUND);
-        header.setForeground(CustomTheme.HEADER_TEXT_COLOR);
-        header.setPreferredSize(new Dimension(header.getWidth(), 45));
-        header.setReorderingAllowed(false);
-        header.setOpaque(true);
-        
-        header.setDefaultRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = new JLabel(value != null ? value.toString() : "");
-                label.setFont(CustomTheme.HEADER_FONT);
-                label.setBackground(CustomTheme.HEADER_BACKGROUND);
-                label.setForeground(CustomTheme.HEADER_TEXT_COLOR);
-                label.setOpaque(true);
-                label.setHorizontalAlignment(SwingConstants.CENTER);
-                label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                return label;
-            }
-        });
-        
-        // Custom cell renderer
-        invoiceTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = new JLabel();
-                label.setFont(CustomTheme.NORMAL_FONT);
-                label.setOpaque(true);
-                label.setForeground(CustomTheme.TEXT_COLOR);
-                
-                if (value != null) {
-                    label.setText(value.toString());
-                } else {
-                    label.setText("");
-                }
-                
-                if (column == 9 && value != null) {
-                    String status = value.toString();
-                    label.setHorizontalAlignment(SwingConstants.CENTER);
-                    switch(status) {
-                        case "Paid":
-                            label.setForeground(CustomTheme.SUCCESS_COLOR);
-                            label.setText("✅ " + status);
-                            break;
-                        case "Partial":
-                            label.setForeground(CustomTheme.WARNING_COLOR);
-                            label.setText("💳 " + status);
-                            break;
-                        case "Pending":
-                            label.setForeground(CustomTheme.DANGER_COLOR);
-                            label.setText("⏰ " + status);
-                            break;
-                        default:
-                            label.setText(status);
-                    }
-                } else if ((column == 6 || column == 7 || column == 8) && value instanceof Double) {
-                    label.setText(String.format("₹%,.2f", (Double) value));
-                    label.setHorizontalAlignment(SwingConstants.RIGHT);
-                } else {
-                    label.setHorizontalAlignment(SwingConstants.CENTER);
-                }
-                
-                if (isSelected) {
-                    label.setBackground(new Color(25, 118, 210, 50));
-                } else {
-                    label.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
-                }
-                
-                label.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-                return label;
-            }
-        });
+        CustomTheme.styleTable(invoiceTable);
         
         TableColumnModel columnModel = invoiceTable.getColumnModel();
         columnModel.getColumn(0).setMaxWidth(50);
@@ -232,7 +184,6 @@ public class BillingPanel extends JPanel {
         
         JScrollPane scrollPane = new JScrollPane(invoiceTable);
         scrollPane.setBorder(BorderFactory.createLineBorder(CustomTheme.LIGHT_COLOR));
-        scrollPane.getViewport().setBackground(Color.WHITE);
         CustomTheme.styleScrollPane(scrollPane);
         
         panel.add(scrollPane, BorderLayout.CENTER);
@@ -443,25 +394,23 @@ public class BillingPanel extends JPanel {
         invoiceCard.setBackground(Color.WHITE);
         invoiceCard.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, CustomTheme.PRIMARY_COLOR));
         
         JLabel hotelName = new JLabel("🏨 GRAND HOTEL");
-        hotelName.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        hotelName.setFont(new Font("Georgia", Font.BOLD, 22));
         hotelName.setForeground(CustomTheme.PRIMARY_COLOR);
         headerPanel.add(hotelName, BorderLayout.WEST);
         
         JLabel invoiceTitle = new JLabel("TAX INVOICE");
-        invoiceTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        invoiceTitle.setFont(new Font("Georgia", Font.BOLD, 18));
         invoiceTitle.setForeground(CustomTheme.DARK_COLOR);
         headerPanel.add(invoiceTitle, BorderLayout.EAST);
         
         invoiceCard.add(headerPanel);
         invoiceCard.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Invoice Info
         JPanel infoPanel = new JPanel(new GridLayout(4, 2, 15, 10));
         infoPanel.setBackground(Color.WHITE);
         infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
@@ -479,7 +428,6 @@ public class BillingPanel extends JPanel {
         invoiceCard.add(infoPanel);
         invoiceCard.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Booking Dates
         JPanel datePanel = new JPanel(new GridLayout(2, 2, 15, 10));
         datePanel.setBackground(Color.WHITE);
         
@@ -493,7 +441,6 @@ public class BillingPanel extends JPanel {
         invoiceCard.add(datePanel);
         invoiceCard.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Charges
         JPanel chargesPanel = new JPanel(new GridLayout(4, 2, 15, 10));
         chargesPanel.setBackground(Color.WHITE);
         chargesPanel.setBorder(BorderFactory.createTitledBorder("Charges Breakdown"));
@@ -517,7 +464,6 @@ public class BillingPanel extends JPanel {
         invoiceCard.add(chargesPanel);
         invoiceCard.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Payment Status
         JPanel paymentPanel = new JPanel(new GridLayout(3, 2, 15, 10));
         paymentPanel.setBackground(Color.WHITE);
         paymentPanel.setBorder(BorderFactory.createTitledBorder("Payment Status"));
@@ -534,7 +480,6 @@ public class BillingPanel extends JPanel {
         invoiceCard.add(paymentPanel);
         invoiceCard.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Action Buttons
         if (booking.getDueAmount() > 0) {
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
             buttonPanel.setBackground(Color.WHITE);
